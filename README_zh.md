@@ -33,11 +33,11 @@ pip install docx2msg
 
 > 示例的docx文件即将推出...
 
-1. 编辑docx文件的正文，将邮件正文设置为普通的docx文件，并保存在"path\to\your\docx"路径下。
+1. 编辑docx文件的正文（将用于邮件正文），并保存在"path\to\your\docx"路径下。
 
     > 建议使用Microsoft Word应用程序的Web布局模式编辑docx文件，以避免意外的格式问题。
 
-2. 编辑docx文件的头部，设置邮件属性。头部应以YAML格式编写，如下所示：
+2. 编辑docx文件的页眉，设置邮件属性。应以YAML格式编写，如下所示：
 
     ```yaml
     Subject: 示例邮件
@@ -99,9 +99,9 @@ with Docx2Msg(docx_path, outlook=outlook, word=word) as docx:
 
 `convert` 方法的输出将是一个 `MailItem` 对象，您可以参考 [Outlook API](https://docs.microsoft.com/en-us/office/vba/api/outlook.mailitem) 了解更多详细信息。
 
-### 邮件头部语法
+### 邮件头语法
 
-邮件头部以 YAML 格式编写在 docx 文件的头部。支持以下属性：
+邮件头以 YAML 格式编写在 docx 文件的页眉。支持以下属性：
 
 
 | 属性                        | 描述                                   | 类型     | 示例                                          |

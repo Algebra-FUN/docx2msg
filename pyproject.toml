@@ -1,13 +1,14 @@
 [build-system]
-requires = ["flit_core >=3.2,<4"]
-build-backend = "flit_core.buildapi"
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "docx2msg"
+version = "0.1.1"
 authors = [{name = "Algebra-FUN", email = "algebra-fun@outlook.com"}]
 description = "Convert a docx to an Outlook Mail-Item."
 readme = "README.md"
-license = {file = "LICENSE"}
+license = {text = "MIT"}
 keywords = ["convert", "docx", "msg", "outlook","mail"]
 classifiers = [
     "License :: OSI Approved :: MIT License",
@@ -16,4 +17,14 @@ classifiers = [
     "Intended Audience :: Developers",
     "Operating System :: Microsoft :: Windows",
 ]
-dynamic = ["version"]
+requires-python = ">=3.8"
+dependencies = [
+    "pyyaml",
+    "python-docx",
+    "docxtpl",
+    "pywin32"
+]
+
+[project.urls]
+Repository = "https://github.com/Algebra-FUN/docx2msg"
+Homepage = "https://github.com/Algebra-FUN/docx2msg"

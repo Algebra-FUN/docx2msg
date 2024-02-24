@@ -2,9 +2,12 @@
 
 Converts a docx to an Outlook Mail-Item with few lines of code.
 
+[![PyPI](https://img.shields.io/pypi/v/docx2msg)](https://pypi.org/project/docx2msg/)
+[![PyPI - License](https://img.shields.io/pypi/l/docx2msg)](https://pypi.org/project/docx2msg/)
+
 ## Description
 
-`docx2msg` is a python package that allows you to convert Microsoft Word .docx files to Outlook Mail-Item and .msg files. It provides a simple and efficient way to automate the conversion process, making it easier to work with outlook email in your workflows.
+`docx2msg` is a python package that allows you to convert Microsoft Word .docx files to Outlook Mail-Item and .msg files. It provides a simple and efficient way to automate the conversion process, making it easier to automate with outlook email in your workflows.
 
 ## Features
 
@@ -12,15 +15,24 @@ Converts a docx to an Outlook Mail-Item with few lines of code.
 - Set mail properties from the header of the docx in YAML format.
 - Able to use docx-template to render the docx body and set mail properties dynamically.
 
+## Requirements
+
+- OS: Windows
+- Application: Microsoft Word, Microsoft Outlook
+- Python: 3.8+
+- Python Packages: pywin32, python-docx, docx-template, pyyaml
+
 ## Installation
 
 ```shell
 pip install docx2msg
 ```
 
-## Usage
+## User Guide
 
-### Simple Usage
+### Quickstart
+
+> The example docx file are coming soon...
 
 1. Edit the body of the docx file to set the mail body as a normal docx file saving at "path\to\your\docx".
 
@@ -87,7 +99,45 @@ with Docx2Msg(docx_path, outlook=outlook, word=word) as docx:
     mail.SaveAs(r"path\to\your\output.msg")
 ```
 
-The output from `convert` method will be an `MailItem` object, for further development, you can refer to the [Outlook API](https://docs.microsoft.com/en-us/office/vba/api/outlook.mailitem) for more details.
+The output from `convert` method will be a `MailItem` object, for further development, you can refer to the [Outlook API](https://docs.microsoft.com/en-us/office/vba/api/outlook.mailitem) for more details.
+
+### Mail Headers Syntax
+
+The mail headers are in YAML format in the header of the docx file. The following properties are supported:
+
+
+| Property                    | Type     | Example                                       |
+|-----------------------------|----------|-----------------------------------------------|
+| To                          | str      | anyone@example.com                            |
+| CC                          | str      | p1@example.com;p2@example.com                 |
+| BCC                          | str      | p1@example.com;p2@example.com                 |
+| Subject                     | str      | Demo email                                    |
+| Attachments                 | str(pathlike)      | path\to\your\file1.docx;path\to\your\file2.msg |
+| Categories                  | str      | RED CATEGORY, BLUE CATEGORY                   |
+| Importance                  | str\|int      | High                                         |
+| Sensitivity                 | str\|int      | Confidential                                  |
+| ReadReceiptRequested        | bool     | True                                          |
+|OriginatorDeliveryReportRequested| bool     | True                                          |
+| FlagRequest                 | str      | Follow up                                     |
+| VotingOptions               | str      | Yes;No                                 |
+| ReminderTime                | datetime      | 2024-02-29 14:00:00                           |
+|DeferredDeliveryTime         | datetime      | 2024-02-29 14:00:00                           |
+|ExpiryTime                   | datetime      | 2024-02-29 14:00:00                           |
+|FlagDueBy                    | datetime      | 2024-02-29 14:00:00                           |
+|ReplyRecipients              | str      | p1@example.com;p2@example.com                      |
+|SaveSentMessageFolder        | str      | 1/Auto/New                      |
+
+**Note:**
+
+For the some properties like `Attachments`, `To`, `CC`, `ReplyRecipients` which may have a list of values, you can use the `;` to separate them.
+
+For the `SaveSentMessageFolder` property, the example "1/Auto/New" refers to the folder access by `outlook.Session.Folders[1].Folders["auto"].Folder["new"]` in python code, which is the sugar syntax for the `SaveSentMessageFolder` property.
+
+All the properties are vaild properties for `Outlook.MailItem` object, so you can refer to https://learn.microsoft.com/en-us/office/vba/api/outlook.mailitem#properties for more details.
+
+### API Documentation
+
+> The API documentation is coming soon...
 
 ## References
 - pywin32: https://pypi.org/project/pywin32/

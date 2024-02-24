@@ -131,7 +131,7 @@ The mail headers are in YAML format in the header of the docx file. The followin
 
 For the some properties like `Attachments`, `To`, `CC`, `ReplyRecipients` which may have a list of values, you can use the `;` to separate them.
 
-For the `SaveSentMessageFolder` property, the example "1/Auto/New" refers to the folder access by `outlook.Session.Folders[1].Folders["auto"].Folder["new"]` in python code, which is the sugar syntax for the `SaveSentMessageFolder` property.
+For the `SaveSentMessageFolder` property, the example "1/Auto/New" refers to the folder access by `outlook.Session.Folders[1].Folders["Auto"].Folder["New"]` in python code, which is the sugar syntax for the `SaveSentMessageFolder` property.
 
 All the properties are vaild properties for `Outlook.MailItem` object, so you can refer to https://learn.microsoft.com/en-us/office/vba/api/outlook.mailitem#properties for more details.
 

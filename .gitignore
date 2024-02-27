@@ -1,4 +1,6 @@
 .vscode
 .DS_Store
+dist
 *.ipynb
 __pycache__
+*.egg-info

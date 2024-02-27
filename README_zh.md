@@ -11,10 +11,10 @@
 ## 特点
 
 - 只使用Word和Outlook应用程序，将docx转换为Outlook邮件，无需任何第三方库。
-- 从docx的页眉以YAML格式设置邮件属性。
+- 在docx的页眉以YAML格式设置邮件属性。
 - 能够使用docx-template渲染docx正文并动态设置邮件属性。
 
-## 要求
+## 环境与依赖
 
 - 操作系统：Windows
 - 应用程序：Microsoft Word，Microsoft Outlook
@@ -33,7 +33,7 @@ pip install docx2msg
 
 > 示例的docx文件即将推出...
 
-1. 编辑docx文件的正文（将用于邮件正文），并保存在"path\to\your\docx"路径下。
+1. 编辑docx文件的正文（将用于邮件正文），并保存在"path/to/your/docx"路径下。
 
     > 建议使用Microsoft Word应用程序的Web布局模式编辑docx文件，以避免意外的格式问题。
 
@@ -43,7 +43,7 @@ pip install docx2msg
     Subject: 示例邮件
     To: anyone@example.com
     CC: p1@example.com;p2@example.com
-    Attachments: path\to\your\附件1.docx;path\to\your\附件2.msg
+    Attachments: path/to/your/附件1.docx;path/to/your/附件2.msg
     Importance: High
     Sensitivity: Confidential
     ReadReceiptRequested: True
@@ -58,10 +58,8 @@ pip install docx2msg
     import win32com.client
     from docx2msg import Docx2Msg
 
-    outlook = win32com.client.Dispatch("Outlook.Application")
-    word = win32com.client.Dispatch("Word.Application")
-    docx_path = r"path\to\your\docx"
-    with Docx2Msg(docx_path, outlook=outlook, word=word) as docx:
+    docx_path = r"path/to/your/docx"
+    with Docx2Msg(docx_path) as docx:
         # 设置 display=True 以在Outlook应用程序中显示邮件
         mail = docx.convert(display=True)
     ```
@@ -84,7 +82,7 @@ context = {
     "姓名": "张三",
     "年龄": 30
 }
-with Docx2Msg(docx_path, outlook=outlook, word=word) as docx:
+with Docx2Msg(docx_path) as docx:
     # 使用template属性渲染docx正文
     docx.template.render(context)
     # 将docx转换为Outlook邮件
@@ -94,7 +92,7 @@ with Docx2Msg(docx_path, outlook=outlook, word=word) as docx:
     # 将邮件保存在草稿文件夹中
     mail.Save()
     # 将邮件另保存为.msg文件
-    mail.SaveAs(r"path\to\your\output.msg")
+    mail.SaveAs(r"path/to/your/output.msg")
 ```
 
 `convert` 方法的输出将是一个 `MailItem` 对象，您可以参考 [Outlook API](https://docs.microsoft.com/en-us/office/vba/api/outlook.mailitem) 了解更多详细信息。
@@ -106,11 +104,11 @@ with Docx2Msg(docx_path, outlook=outlook, word=word) as docx:
 
 | 属性                        | 描述                                   | 类型     | 示例                                          |
 |-----------------------------|----------------------------------------|----------|-----------------------------------------------|
-| To                          | 收件人                                 | str      | anyone@example.com                            |
-| CC                          | 抄送人                                 | str      | p1@example.com;p2@example.com                 |
-| BCC                          | 密送人                                 | str      | p1@example.com;p2@example.com                 |
+| To                          | 收件人                                 | str\|list[str]     | anyone@example.com                            |
+| CC                          | 抄送人                                 | str\|list[str]     | p1@example.com;p2@example.com                 |
+| BCC                          | 密送人                                 | str\|list[str]      | p1@example.com;p2@example.com                 |
 | Subject                     | 主题                                   | str      | Demo email                                    |
-| Attachments                 | 附件                                   | str(路径)      | path\to\your\file1.docx;path\to\your\file2.msg |
+| Attachments                 | 附件                                   | str\|list[str]      | path/to/your/file1.docx;path/to/your/file2.msg |
 | Categories                  | 分类                                   | str      | 红色类别                   |
 | Importance                  | 重要程度                               | str\|int      | High                                         |
 | Sensitivity                 | 机密程度                               | str\|int      | Confidential                                  |
@@ -122,7 +120,7 @@ with Docx2Msg(docx_path, outlook=outlook, word=word) as docx:
 | DeferredDeliveryTime         | 延迟发送时间                           | datetime      | 2024-02-29 14:00:00                           |
 | ExpiryTime                   | 过期时间                               | datetime      | 2024-02-29 14:00:00                           |
 | FlagDueBy                    | 标记到期时间                           | datetime      | 2024-02-29 14:00:00                           |
-| ReplyRecipients              | 回复收件人                             | str      | p1@example.com;p2@example.com                      |
+| ReplyRecipients              | 回复收件人                             | str\|list[str]      | p1@example.com;p2@example.com                      |
 | SaveSentMessageFolder        | 保存已发送邮件的文件夹                 | str      | 1/自动生成/新                      |
 
 **注意：**
@@ -131,7 +129,7 @@ with Docx2Msg(docx_path, outlook=outlook, word=word) as docx:
 
 对于`SaveSentMessageFolder`属性，示例中的"1/自动生成/新"是指在Python代码中通过`outlook.Session.Folders[1].Folders["自动生成"].Folder["新"]`访问的文件夹，这是`SaveSentMessageFolder`属性的语法糖。
 
-所有属性都是`Outlook.MailItem`对象的有效属性，因此您可以参考https://learn.microsoft.com/en-us/office/vba/api/outlook.mailitem#properties了解更多详细信息。
+所有属性需为`Outlook.MailItem`对象的有效属性，因此您可以参考https://learn.microsoft.com/en-us/office/vba/api/outlook.mailitem#properties 了解更多详细信息。
 
 ### API文档
 

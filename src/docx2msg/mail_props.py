@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import IntEnum
-from typing import Any, Callable, Dict, Type, Union
+from typing import Any, Callable, Dict, List, Type, Union
 
 from win32com.client import CDispatch
 
@@ -36,14 +36,25 @@ class Sensitivity(IntEnum):
     Private = 2
     Confidential = 3
 
-def AttrsAdd(attr:str):
-    def __set_attr(mail:object, items:str,**kwargs):
-        if isinstance(items, str):
-            for item in items.split(";"):
-                getattr(mail,attr).Add(item)
-            return 
+def StrListSet(attr:str):
+    def __set_attr(mail:object, item:Union[str,List[str]],**kwargs):
+        if isinstance(item, List):
+            item = ';'.join(item)
+        if isinstance(item, str):
+            setattr(mail, attr, item)
         else:
-            raise ValueError(f"This mail property must be a string, not {type(items)}")
+            raise ValueError(f"This mail property must be a string or a List of string , not {type(item)}")
+    return __set_attr
+
+def AttrsAdd(attr:str):
+    def __set_attr(mail:object, items:Union[str,List[str]],**kwargs):
+        if isinstance(items, str):
+            items = items.split(";")
+        if isinstance(items, List):
+            for item in items:
+                getattr(mail,attr).Add(item)
+        else:
+            raise ValueError(f"This mail property must be a string or a List of string , not {type(items)}")
     return __set_attr
 
 def parse_datetime(val:datetime):
@@ -60,9 +71,6 @@ def set_save_sent_folder(mail:object, path:str, outlook:CDispatch, **kwargs):
     mail.SaveSentMessageFolder = folder
 
 TYPED_PROPERTIES = {
-    "To":str, 
-    "CC":str, 
-    "BCC":str, 
     "Subject":str, 
     "Categories":str,
     "OriginatorDeliveryReportRequested":bool, 
@@ -70,6 +78,7 @@ TYPED_PROPERTIES = {
     "FlagRequest":str,
     "VotingOptions":str
 }
+MAILADDRESS_PROPERTIES = {"To","CC","BCC"}
 DATETIME_PROPERTIES = {"DeferredDeliveryTime","ExpiryTime","FlagDueBy"}
 SPECIAL_PROPERTIES = {
     "Attachments":AttrsAdd("Attachments"), 
@@ -80,7 +89,8 @@ SPECIAL_PROPERTIES = {
     "SaveSentMessageFolder":set_save_sent_folder
 }
 
+MAILADDRESS_PROPERTIES = {k:StrListSet(k) for k in MAILADDRESS_PROPERTIES}
 TYPED_PROPERTIES = {k:OnlyTypeSet(k,T) for k,T in TYPED_PROPERTIES.items()}
 DATETIME_PROPERTIES = {k:OnlyTypeSet(k,datetime,parser=parse_datetime) for k in DATETIME_PROPERTIES}
-SET_SUPPORTED_PROPERTIES:Dict[str,Callable[[object,Any],None]] = {**TYPED_PROPERTIES,**DATETIME_PROPERTIES,**SPECIAL_PROPERTIES}
+SET_SUPPORTED_PROPERTIES:Dict[str,Callable[[object,Any],None]] = {**MAILADDRESS_PROPERTIES, **TYPED_PROPERTIES,**DATETIME_PROPERTIES,**SPECIAL_PROPERTIES}
 

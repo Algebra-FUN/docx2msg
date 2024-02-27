@@ -29,15 +29,17 @@ with Docx2Msg(docx_path, outlook=outlook, word=word) as docx:
 
 __version__ = "0.1.0"
 
+import base64
 import warnings
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Dict, Optional, Union
 
+import win32com.client
 import yaml
+from bs4 import BeautifulSoup
 from docx import Document
 from docxtpl import DocxTemplate
-from win32com.client import CDispatch
 
 from .mail_props import *
 
@@ -45,19 +47,13 @@ from .mail_props import *
 class Docx2Msg:
     """Class for converting a docx to an Outlook Mail-Item."""
 
-    def __init__(
-        self, docx: Union[str, Path], outlook: CDispatch = None, word: CDispatch = None
-    ) -> None:
+    def __init__(self, docx: Union[str, Path]) -> None:
         """Class for converting a docx to an Outlook Mail-Item.
 
         Parameters
         ----------
         docx : Union[str, Path]
             The path of the docx file.
-        outlook : CDispatch
-            The instance of Outlook Application.
-        word : CDispatch
-            The instance of Word Application.
 
         References
         ----------
@@ -68,12 +64,11 @@ class Docx2Msg:
         """
         self.original_docx_path = Path(docx)
         self.docx_path = Path(docx)
-        if outlook is None or word is None:
-            raise ValueError("The outlook and word parameters are required.")
-        self.outlook = outlook
-        self.word = word
+        self.outlook = win32com.client.Dispatch("Outlook.Application")
+        self.word = win32com.client.Dispatch("Word.Application")
         self.word.Visible = True
         self.word.DisplayAlerts = 0
+        self.__headers: Dict[str, Any] = None
         self.__docx_template: DocxTemplate = None
         self.__temp_dir: TemporaryDirectory = None
 
@@ -103,7 +98,7 @@ class Docx2Msg:
             self.docx_path = self.temp_dir / "temp.docx"
             self.template.save(self.docx_path)
 
-    def __get_headers(self) -> Optional[Dict[str, Any]]:
+    def __extract_headers(self) -> Optional[Dict[str, Any]]:
         doc = Document(self.docx_path)
         # get header of the first section of the document
         header = doc.sections[0].header
@@ -113,28 +108,69 @@ class Docx2Msg:
 
     @property
     def headers(self) -> Optional[Dict[str, Any]]:
-        """Get mail properties from the header of the docx.
-
-        Notes
-        -----
-        The header of the docx should be in YAML format.
-        """
+        """Get mail properties from the header of the docx."""
+        if self.__headers:
+            return self.__headers
         self.__template_save()
-        return self.__get_headers()
+        return self.__extract_headers()
 
-    def __get_html(self) -> str:
+    @headers.setter
+    def headers(self, value: Union[str, Dict[str, Any]]) -> None:
+        """Set mail properties from a Dict."""
+        if isinstance(value, str):
+            value = yaml.safe_load(value)
+        if isinstance(value, Dict):
+            self.__headers = value
+        else:
+            raise ValueError("The value must be a Dict or a string for YAML.")
+
+    def load_headers(self, path: Union[str, Path]) -> None:
+        """Load mail properties from a YAML file instead of the header of the docx.
+
+        Parameters
+        ----------
+        path : Union[str, Path]
+            The path of a YAML file.
+        """
+        try:
+            context = Path(path).read_text()
+        except Exception:
+            raise ValueError(
+                "The path must be a string for a Path or a Path object for a YAML file."
+            )
+        self.headers = context
+        return context
+
+    def __extract_html(self) -> str:
         docx = self.word.Documents.Open(str(self.docx_path))
         docx.SaveEncoding = 65001
         html_path = self.temp_dir / "temp.html"
         docx.SaveAs2(str(html_path), FileFormat=10, Encoding=65001)
         docx.Close()
-        return html_path.read_text(encoding="utf-8")
+        html = html_path.read_text(encoding="utf-8")
+        return self.__revise_html(html)
 
     @property
     def html(self) -> str:
-        """Get the HTMLBody of the docx."""
+        """Get the desired HTMLBody of the docx."""
         self.__template_save()
-        return self.__get_html()
+        return self.__extract_html()
+
+    def __revise_html(self, html: str) -> str:
+        """Revise the HTMLBody of the docx."""
+        soup = BeautifulSoup(html, "html.parser")
+        self.__base64_img(soup)
+        return str(soup)
+
+    def __base64_img(self, soup: BeautifulSoup) -> None:
+        """Convert the img src to base64."""
+        for img in soup.find_all("img"):
+            img_path: Path = self.temp_dir / img["src"]
+            ext = img_path.suffix.lstrip(".")
+            if img_path.exists():
+                with open(img_path, "rb") as f:
+                    img_data = base64.b64encode(f.read()).decode()
+                img["src"] = f"data:image/{ext};base64,{img_data}"
 
     def convert(self, display=False, force_render=False) -> "_MailItem":
         """
@@ -166,7 +202,7 @@ class Docx2Msg:
 
         self.mail = self.outlook.CreateItem(0)
         # set mail attributes
-        headers = self.__get_headers()
+        headers = self.__extract_headers()
         for k, v in headers.items():
             if k in SET_SUPPORTED_PROPERTIES:
                 SET_SUPPORTED_PROPERTIES[k](self.mail, v, outlook=self.outlook)
@@ -182,7 +218,7 @@ class Docx2Msg:
                     )
                 setattr(self.mail, k, v)
         # set mail body
-        self.mail.HTMLBody = self.__get_html()
+        self.mail.HTMLBody = self.__extract_html()
         if display:
             self.mail.Display()
         if force_render:

@@ -22,7 +22,8 @@ dependencies = [
     "pyyaml",
     "python-docx",
     "docxtpl",
-    "pywin32"
+    "pywin32",
+    "beautifulsoup4"
 ]
 
 [project.urls]

@@ -2,3 +2,4 @@ pyyaml
 python-docx
 docxtpl
 pywin32
+beautifulsoup4

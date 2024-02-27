@@ -33,7 +33,7 @@ import base64
 import warnings
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Literal, Optional, Union
 
 import win32com.client
 import yaml
@@ -172,12 +172,22 @@ class Docx2Msg:
                     img_data = base64.b64encode(f.read()).decode()
                 img["src"] = f"data:image/{ext};base64,{img_data}"
 
-    def convert(self, display=False, force_render=False) -> "_MailItem":
+    def convert(
+        self,
+        reply_on: Optional["_MailItem"] = None,
+        reply_mode: Literal["Reply", "ReplyAll"] = "Reply",
+        display=False,
+        force_render=False,
+    ) -> "_MailItem":
         """
         Convert the docx(or docx template) to an Outlook Mail-Item.
 
         Parameters
         ----------
+        reply_on : Optional[_MailItem] (default None)
+            The Mail-Item to reply on. If None, create a new Mail-Item.
+        reply_mode : Literal['Reply', 'ReplyAll'] (default 'Reply')
+            The mode to reply on the Mail-Item. Only available when `reply_on` is not None.
         display : bool (default False)
             Whether to display the created Mail-Item.
         force_render : bool (default False)
@@ -195,12 +205,25 @@ class Docx2Msg:
 
         Notes
         -----
-        Sometimes, the HTMLBody of generated .msg mail file may not be well rendered, you can set the `force_render` parameter to True to ensure the HTMLBody is well rendered.
+        - Render Issue: Sometimes, the HTMLBody of generated .msg mail file may not be well rendered, you can set the `force_render` parameter to True to ensure the HTMLBody is well rendered.
         However, this will causes the Mail-Item to be saved in the default draft folder in Outlook, which means you need to cleanup the Mail-Items manually if you don't want to keep it.
+        - Recipients Priority: The recipients in the docx header will have a higher priority than the recipients in the reply mail of `reply_on` Mail-Item. So if you want to reply on a mail to sender, please don't set the `To` in the docx header.
         """
         self.__template_save()
 
-        self.mail = self.outlook.CreateItem(0)
+        # create or reply a mail
+        if reply_on is None:
+            self.mail = self.outlook.CreateItem(0)
+        else:
+            try:
+                self.mail = (
+                    reply_on.ReplyAll()
+                    if reply_mode == "ReplyAll"
+                    else reply_on.Reply()
+                )
+            except Exception:
+                raise ValueError("The reply_on must be a Mail-Item.")
+
         # set mail attributes
         headers = self.__extract_headers()
         for k, v in headers.items():
@@ -218,7 +241,12 @@ class Docx2Msg:
                     )
                 setattr(self.mail, k, v)
         # set mail body
-        self.mail.HTMLBody = self.__extract_html()
+        if reply_on is None:
+            self.mail.HTMLBody = self.__extract_html()
+        else:
+            # when reply a mail, add new body before the original body
+            self.mail.HTMLBody = self.__extract_html() + "\n" + self.mail.HTMLBody
+
         if display:
             self.mail.Display()
         if force_render:

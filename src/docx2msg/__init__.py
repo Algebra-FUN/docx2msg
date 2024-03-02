@@ -15,19 +15,16 @@ Usage
 Easily convert a docx to an Outlook Mail-Item with few lines of code:
 
 ```python
-import win32com.client
 from docx2msg import Docx2Msg
 
-outlook = win32com.client.Dispatch("Outlook.Application")
-word = win32com.client.Dispatch("Word.Application")
-docx_path = r"path\\to\your\docx"
-with Docx2Msg(docx_path, outlook=outlook, word=word) as docx:
+docx_path = r"path/to/your/docx"
+with Docx2Msg(docx_path) as docx:
     mail = docx.convert(display=True)
 ```
 
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.2"
 
 import base64
 import warnings

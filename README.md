@@ -34,7 +34,7 @@ pip install docx2msg
 
 > The example docx file are coming soon...
 
-1. Edit the body of the docx file to set the mail body as a normal docx file saving at "path/to/your/docx".
+1. Edit the body of the docx file (which will be used as the mail body) and save it to the path `path/to/your/docx`.
 
     > You are recommand to edit the docx file with Microsoft Word Application in web layout mode to avoid the unexpected format issue.
 
